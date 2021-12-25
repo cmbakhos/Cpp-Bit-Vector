@@ -19,15 +19,13 @@
 // Include C++ Standard Libraries
 #include <bitset>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
 
 // Include any other files
 //#include BitVector.hpp
-
-// Define type byte as uint8_t for easier typing
-typedef uint8_t byte;
 
 // The structure of the BitVector is a vector of bytes. By definition, each byte holds 8 bits, so, for a given BitVector of n bits, where n is a
 // non-negative integer, there will be ( ( ( n - 1 ) / 8 ) + 1 ) bytes.
@@ -37,6 +35,7 @@ class BitVector {
 	BitVector();
 	BitVector( const uint32_t numberOfBits_ );
 	BitVector( const std::vector<std::bitset<1>> bitsetVector_ );
+	BitVector( char const value[] );
 	BitVector( const BitVector& BitVector_ ) = default;
 	
 	// Getters and setters. TODO: Rework these? Consider other options?
@@ -48,7 +47,7 @@ class BitVector {
 	std::bitset<1>& operator[]( int32_t bit );
 	BitVector operator()( int32_t bitIndex1, int32_t bitIndex2 );
 	bool operator=( int64_t value );
-	bool operator=( char[] value ); // string of 1s and 0s
+	bool operator=( char const value[] ); // string of 1s and 0s
 	
 	
 	
@@ -85,6 +84,11 @@ BitVector::BitVector( const std::vector<std::bitset<1>> bitsetVector_ ) : bitset
 	}
 }
 
+// Constructor with char const value[]
+BitVector::BitVector( char const value[] ) {
+	
+}
+
 
 // Getters and setters. TODO: Rework these? Consider other options?
 // number of bits getter
@@ -98,6 +102,7 @@ void BitVector::numberOfBits( uint32_t numberOfBits_ ) {
 }
 
 
+// TODO; FIX THIS
 // Set a range of values
 void BitVector::setRange( int32_t bitIndex1, int32_t bitIndex2, BitVector values ) {
 	uint32_t valuesSize = values.numberOfBits();
@@ -125,8 +130,24 @@ BitVector BitVector::operator()( int32_t bitIndex1, int32_t bitIndex2 ) {
 
 // = overloads
 bool BitVector::operator=( int64_t value ) {
-	for( uint32_t i = 0; ( i < (uint64_t) numberOfBits_ ) && ( i < 64 ); i++ ) {
+	for( uint32_t i = 0; ( i < numberOfBits_ ) && ( i < 64 ); i++ ) {
 		bitsetVector_[i] = ( value & ( 1ull << i ) ) >> i;
+	}
+	for( uint32_t i = std::min( numberOfBits_, 64u ); i < numberOfBits_; i++ ) {
+		bitsetVector_[i] = 0;
+	}
+	return true;
+}
+
+// this cuts off the wrong bits when value is oversized. it should cut off the bigger bits but it will truncate the smaller ones
+bool BitVector::operator=( char const value[] ) {
+	uint32_t valueBits = strlen( value );
+	uint32_t middlePartition = std::min( numberOfBits_, valueBits );
+	for( uint32_t i = 0; ( i < numberOfBits_ ) && ( i < valueBits ); i++ ) {
+		bitsetVector_[middlePartition - i - 1] = value[i];
+	}
+	for( uint32_t i = middlePartition; i < numberOfBits_; i++ ) {
+		bitsetVector_[i] = 0;
 	}
 	return true;
 }
@@ -142,11 +163,11 @@ int32_t main() {
 	BitVector vector3 = vector2;
 	
 	vector3 = 45675678567;
-	vector3 = 0xffffffffffffffff;
+	vector3 = 0xf1ffffffffffffff;
 	
 	//std::cout << vector3(62, 66)[3] << vector3(62, 66)[2] << vector3(62, 66)[1] << vector3(62, 66)[0] << '\n';
 	
-	BitVector vectortest = BitVector(std::vector({1}));
+	//BitVector vectortest = BitVector(std::vector({1}));
 	
 	//std::cout << vectortest.numberOfBits() << " " << vectortest[0] << '\n';
 	
@@ -171,6 +192,7 @@ int32_t main() {
 	
 	BitVector vector4 = vector3;
 	BitVector vector5 = BitVector( vector3 );
+	vector3 = "10111011111011111110111111111011111111111011111111111110111111111111111011111111111111111011111111111111111110111111111111111111111";
 	
 	std::vector<BitVector> vectors2;
 	
