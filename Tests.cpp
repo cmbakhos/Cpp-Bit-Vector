@@ -144,7 +144,7 @@ bool BitVector::operator=( char const value[] ) {
 	uint32_t valueBits = strlen( value );
 	uint32_t middlePartition = std::min( numberOfBits_, valueBits );
 	for( uint32_t i = 0; ( i < numberOfBits_ ) && ( i < valueBits ); i++ ) {
-		bitsetVector_[middlePartition - i - 1] = value[i];
+		bitsetVector_[middlePartition - i - 1] = value[i + valueBits - numberOfBits_];
 	}
 	for( uint32_t i = middlePartition; i < numberOfBits_; i++ ) {
 		bitsetVector_[i] = 0;
