@@ -27,31 +27,29 @@
 // Include any other files
 //#include BitVector.hpp
 
-// The structure of the BitVector is a vector of bytes. By definition, each byte holds 8 bits, so, for a given BitVector of n bits, where n is a
-// non-negative integer, there will be ( ( ( n - 1 ) / 8 ) + 1 ) bytes.
 class BitVector {
 	public:
 	// Constructors
 	BitVector();
 	BitVector( const uint32_t numberOfBits_ );
-	BitVector( char const value[] );
+	BitVector( char const value[] );	// TODO
 	BitVector( const BitVector& BitVector_ ) = default;
 	
 	// Get and set numberOfBits_
 	uint32_t numberOfBits();
-	void numberOfBits( uint32_t numberOfBits_ );
+	void numberOfBits( uint32_t numberOfBits_ );	// TODO
 	
-	// Get and set range
-	BitVector getRange( int32_t bitIndex1, int32_t bitIndex2 );
-	void setRange( int32_t bitIndex1, int32_t bitIndex2, BitVector values );
+	// Get and set range from bitIndex1 (inclusive) to bitIndex2 (exclusive)
+	BitVector getRange( int32_t bitIndex1, int32_t bitIndex2 );	// TODO
+	void setRange( int32_t bitIndex1, int32_t bitIndex2, BitVector values );	// TODO
 	
 	// Index Overloads
 	std::bitset<1>& operator[]( int32_t bit );
-	BitVector operator()( int32_t bitIndex1, int32_t bitIndex2 );
+	BitVector operator()( int32_t bitIndex1, int32_t bitIndex2 );	// bitIndex1 (inclusive) to bitIndex2 (exclusive)
 	
 	// Assignment Overloads
 	bool operator=( int64_t value );
-	bool operator=( char const value[] ); // string of 1s and 0s
+	bool operator=( char const value[] ); // value[] is a string of 1s and 0s
 	
 	// Logical Overloads
 	BitVector operator~();
@@ -59,23 +57,23 @@ class BitVector {
 	BitVector operator&( BitVector& rhs );
 	BitVector operator^( BitVector& rhs );
 	
-	// Arithmetic Overloads?
-	
-	
 	
 	private:
 	// Number of bits
 	uint32_t numberOfBits_;
 	
 	// Bit storing
-	std::bitset<1> baseBit_;
+	std::bitset<1> baseBit_ = '0';
 	std::vector<std::bitset<1>> bitsetVector_;
 	
-	// Private constructor
+	// Private constructor with the semi-complicated type const std::vector<std::bitset<1>>
 	BitVector( const std::vector<std::bitset<1>> bitsetVector_ );
 };
 
 
+
+// Public
+// Constructors
 // Default Constructor
 BitVector::BitVector() {
 	numberOfBits_ = 0;
@@ -84,41 +82,40 @@ BitVector::BitVector() {
 // Constructor with number of bits
 BitVector::BitVector( uint32_t numberOfBits_ ) : numberOfBits_(numberOfBits_) {
 	for( uint32_t i = 0; i < numberOfBits_; i++ ) {
-		bitsetVector_.push_back( baseBit_ );
-	}
-}
-
-// Constructor with vector of bitsets of 1 bit
-BitVector::BitVector( const std::vector<std::bitset<1>> bitsetVector_ ) : bitsetVector_(bitsetVector_) {
-	numberOfBits_ = bitsetVector_.size();
-	
-	for( uint32_t i = 0; i < numberOfBits_; i++ ) {
-		std::cout << this->bitsetVector_[i] << " " << bitsetVector_[i] << '\n';
-		this->bitsetVector_[i] = bitsetVector_[i];
-		std::cout << this->bitsetVector_[i] << " " << bitsetVector_[i] << '\n';
+		bitsetVector_.emplace_back( baseBit_ );
 	}
 }
 
 // Constructor with char const value[]
 BitVector::BitVector( char const value[] ) {
-	
+	// TODO
 }
 
 
-// Getters and setters. TODO: Rework these? Consider other options?
-// number of bits getter
+
+// Get and set numberOfBits_
+// Get numberOfBits_
 uint32_t BitVector::numberOfBits() {
 	return numberOfBits_;
 }
 
-// number of bits setter
+// TODO: FIX THIS
+// Set numberOfBits_
 void BitVector::numberOfBits( uint32_t numberOfBits_ ) {
 	this->numberOfBits_ = numberOfBits_;
+	// you gotta make sure that the number of bits actually changes. This is just asking for a seg fault
 }
 
 
-// TODO; FIX THIS
-// Set a range of values
+
+// Get and set range from bitIndex1 (inclusive) to bitIndex2 (exclusive)
+// Get the range of values from bitIndex1 (inclusive) to bitIndex2 (exclusive)
+BitVector BitVector::getRange( int32_t bitIndex1, int32_t bitIndex2 ) {
+	
+}
+
+// TODO: FIX THIS
+// Set the range of values from bitIndex1 (inclusive) to bitIndex2 (exclusive)
 void BitVector::setRange( int32_t bitIndex1, int32_t bitIndex2, BitVector values ) {
 	uint32_t valuesSize = values.numberOfBits();
 	uint32_t j = 0;
@@ -129,12 +126,15 @@ void BitVector::setRange( int32_t bitIndex1, int32_t bitIndex2, BitVector values
 }
 
 
+
+// Index Overloads
 // [] overload
 std::bitset<1>& BitVector::operator[]( int32_t bit ) {
 	return bitsetVector_[bit];
 }
 
-// () overload (get a range of values)
+// TODO: Copy this into getRange and then have this call that. Make sure this works
+// () overload (get range from bitIndex1 (inclusive) to bitIndex2 (exclusive))
 BitVector BitVector::operator()( int32_t bitIndex1, int32_t bitIndex2 ) {
 	std::vector<std::bitset<1>> bitSubsetVector_;
 	for( uint32_t i = bitIndex1; i < bitIndex2; i++ ) {
@@ -143,7 +143,20 @@ BitVector BitVector::operator()( int32_t bitIndex1, int32_t bitIndex2 ) {
 	return BitVector( bitSubsetVector_ );
 }
 
-// = overloads
+
+
+// Assignment Overloads
+/*	Not how these behave:
+*	101110110100101010
+*	0000000000
+*	1011101101
+*
+*	How these behave:
+*	101110110100101010
+*	        0000000000
+*	        0100101010
+*/
+// int64_t Overload
 bool BitVector::operator=( int64_t value ) {
 	for( uint32_t i = 0; ( i < numberOfBits_ ) && ( i < 64 ); i++ ) {
 		bitsetVector_[i] = ( value & ( 1ull << i ) ) >> i;
@@ -154,17 +167,7 @@ bool BitVector::operator=( int64_t value ) {
 	return true;
 }
 
-/*
-*	Not how this behaves:
-*	101110110100101010
-*	0000000000
-*	1011101101
-*
-*	How this behaves:
-*	101110110100101010
-*	        0000000000
-*	        0100101010
-*/
+// char const [] Overload
 bool BitVector::operator=( char const value[] ) {
 	// valueBits tells us how many bits are in value[]. This is equivalent to the length of the string
 	uint32_t valueBits = strlen( value );
@@ -184,6 +187,8 @@ bool BitVector::operator=( char const value[] ) {
 	}
 	return true;
 }
+
+
 
 // Arithmetic Overloads
 // NOT Overload
@@ -248,6 +253,20 @@ BitVector BitVector::operator^( BitVector& rhs ) {
 		xorResult.bitsetVector_[i] = ( lhs.bitsetVector_[i] ^ rhs.bitsetVector_[i] );
 	}
 	return xorResult;
+}
+
+
+
+// Private
+// Constructor with vector of bitsets of 1 bit
+BitVector::BitVector( const std::vector<std::bitset<1>> bitsetVector_ ) : bitsetVector_(bitsetVector_) {
+	numberOfBits_ = bitsetVector_.size();
+	
+	for( uint32_t i = 0; i < numberOfBits_; i++ ) {
+		std::cout << this->bitsetVector_[i] << " " << bitsetVector_[i] << '\n';
+		this->bitsetVector_[i] = bitsetVector_[i];
+		std::cout << this->bitsetVector_[i] << " " << bitsetVector_[i] << '\n';
+	}
 }
 
 
