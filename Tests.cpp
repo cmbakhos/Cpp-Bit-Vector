@@ -34,20 +34,32 @@ class BitVector {
 	// Constructors
 	BitVector();
 	BitVector( const uint32_t numberOfBits_ );
-	BitVector( const std::vector<std::bitset<1>> bitsetVector_ );
 	BitVector( char const value[] );
 	BitVector( const BitVector& BitVector_ ) = default;
 	
-	// Getters and setters. TODO: Rework these? Consider other options?
+	// Get and set numberOfBits_
 	uint32_t numberOfBits();
 	void numberOfBits( uint32_t numberOfBits_ );
+	
+	// Get and set range
+	BitVector getRange( int32_t bitIndex1, int32_t bitIndex2 );
 	void setRange( int32_t bitIndex1, int32_t bitIndex2, BitVector values );
 	
-	// Overloads
+	// Index Overloads
 	std::bitset<1>& operator[]( int32_t bit );
 	BitVector operator()( int32_t bitIndex1, int32_t bitIndex2 );
+	
+	// Assignment Overloads
 	bool operator=( int64_t value );
 	bool operator=( char const value[] ); // string of 1s and 0s
+	
+	// Logical Overloads
+	BitVector operator~();
+	BitVector operator|( BitVector& rhs );
+	BitVector operator&( BitVector& rhs );
+	BitVector operator^( BitVector& rhs );
+	
+	// Arithmetic Overloads?
 	
 	
 	
@@ -58,6 +70,9 @@ class BitVector {
 	// Bit storing
 	std::bitset<1> baseBit_;
 	std::vector<std::bitset<1>> bitsetVector_;
+	
+	// Private constructor
+	BitVector( const std::vector<std::bitset<1>> bitsetVector_ );
 };
 
 
@@ -139,18 +154,102 @@ bool BitVector::operator=( int64_t value ) {
 	return true;
 }
 
-// this cuts off the wrong bits when value is oversized. it should cut off the bigger bits but it will truncate the smaller ones
+/*
+*	Not how this behaves:
+*	101110110100101010
+*	0000000000
+*	1011101101
+*
+*	How this behaves:
+*	101110110100101010
+*	        0000000000
+*	        0100101010
+*/
 bool BitVector::operator=( char const value[] ) {
+	// valueBits tells us how many bits are in value[]. This is equivalent to the length of the string
 	uint32_t valueBits = strlen( value );
+	// middlePartition tells us the minimum value of numberOfBits_ and how many bits are in value[]. We need to fill any extra bits in with zeros
 	uint32_t middlePartition = std::min( numberOfBits_, valueBits );
+	// differenceOffset is for when there are more bits in the value string than in our BitVector. This allows the lower bits to be copied with
+	// priority over the upper bits
+	uint32_t differenceOffset = std::max( (int32_t) valueBits - (int32_t) numberOfBits_, 0 );
+	
+	// Loop through the bits that have a value
 	for( uint32_t i = 0; ( i < numberOfBits_ ) && ( i < valueBits ); i++ ) {
 		bitsetVector_[middlePartition - i - 1] = value[i + std::max( (int32_t) valueBits - (int32_t) numberOfBits_, 0 )];
 	}
+	// Loop through any remaining bits to set them to zero
 	for( uint32_t i = middlePartition; i < numberOfBits_; i++ ) {
 		bitsetVector_[i] = 0;
 	}
 	return true;
 }
+
+// Arithmetic Overloads
+// NOT Overload
+BitVector BitVector::operator~() {
+	BitVector lhs = *this;
+	BitVector notResult = BitVector( lhs.numberOfBits_ );
+	for( uint32_t i = 0; i < lhs.numberOfBits_; i++ ) {
+		notResult.bitsetVector_[i] = ~lhs.bitsetVector_[i];
+	}
+	return notResult;
+}
+
+// OR Overload
+BitVector BitVector::operator|( BitVector& rhs ) {
+	BitVector lhs = *this;
+	BitVector orResult;
+	uint32_t middlePartition = std::min( lhs.numberOfBits_, rhs.numberOfBits_ );
+	bool lhsLarger = ( lhs.numberOfBits_ > rhs.numberOfBits_ );
+	if( lhsLarger ) {
+		orResult = lhs;
+	}
+	else {
+		orResult = rhs;
+	}
+	for( uint32_t i = 0; i < middlePartition; i++ ) {
+		orResult.bitsetVector_[i] = ( lhs.bitsetVector_[i] | rhs.bitsetVector_[i] );
+	}
+	return orResult;
+}
+
+// AND Overload
+BitVector BitVector::operator&( BitVector& rhs ) {
+	BitVector lhs = *this;
+	BitVector andResult;
+	uint32_t middlePartition = std::min( lhs.numberOfBits_, rhs.numberOfBits_ );
+	bool lhsLarger = ( lhs.numberOfBits_ > rhs.numberOfBits_ );
+	if( lhsLarger ) {
+		andResult = BitVector( lhs.numberOfBits_ );
+	}
+	else {
+		andResult = BitVector( rhs.numberOfBits_ );
+	}
+	for( uint32_t i = 0; i < middlePartition; i++ ) {
+		andResult.bitsetVector_[i] = ( lhs.bitsetVector_[i] & rhs.bitsetVector_[i] );
+	}
+	return andResult;
+}
+
+// XOR Overload
+BitVector BitVector::operator^( BitVector& rhs ) {
+	BitVector lhs = *this;
+	BitVector xorResult;
+	uint32_t middlePartition = std::min( lhs.numberOfBits_, rhs.numberOfBits_ );
+	bool lhsLarger = ( lhs.numberOfBits_ > rhs.numberOfBits_ );
+	if( lhsLarger ) {
+		xorResult = lhs;
+	}
+	else {
+		xorResult = rhs;
+	}
+	for( uint32_t i = 0; i < middlePartition; i++ ) {
+		xorResult.bitsetVector_[i] = ( lhs.bitsetVector_[i] ^ rhs.bitsetVector_[i] );
+	}
+	return xorResult;
+}
+
 
 
 // Main
@@ -193,13 +292,23 @@ int32_t main() {
 	BitVector vector4 = vector3;
 	BitVector vector5 = BitVector( vector3 );
 	vector3 = "10111011111011111110111111111011111111111011111111111110111111111111111011111111111111111011111111111111111110111111111111111111111";
-	//vector3 = "1000111";
+	vector3 = "1000111";
+	BitVector vector6 = BitVector( 16 );
+	vector6 = "1100010000101110";
+	
+	BitVector vector7 = ~( vector3 | vector6 );
+	BitVector vector8 = vector7 ^ vector7;
+	BitVector vector9 = vector6 & vector3;
 	
 	std::vector<BitVector> vectors2;
 	
 	vectors2.push_back( std::move( vector3 ) );
 	vectors2.push_back( std::move( vector4 ) );
 	vectors2.push_back( std::move( vector5 ) );
+	vectors2.push_back( std::move( vector6 ) );
+	vectors2.push_back( std::move( vector7 ) );
+	vectors2.push_back( std::move( vector8 ) );
+	vectors2.push_back( std::move( vector9 ) );
 	
 	std::cout << "New Vectors" << '\n';
 	
