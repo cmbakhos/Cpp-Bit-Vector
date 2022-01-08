@@ -29,6 +29,10 @@
 
 // Main
 int32_t main() {
+	std::bitset<1> test = 'r';
+	
+	std::cout << test << '\n';
+	
 	std::vector<BitVector> vectors;
 	
 	BitVector vector0;

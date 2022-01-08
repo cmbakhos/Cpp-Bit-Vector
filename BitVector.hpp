@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <boost/dynamic_bitset.hpp>
 
 class BitVector {
 	public:
